@@ -1,3 +1,8 @@
+body{
+  height: 100%;
+  overflow-y: hidden;
+}
+
 .App {
   text-align: center;
 }
@@ -19,4 +24,60 @@
 
 .App-link {
   color: #09d3ac;
+}
+
+.shadow{
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+}
+
+.navbar-custom {
+  background: #feca57;
+}
+
+.custom-toggler.navbar-toggler {
+  border-color: #443737;
+}
+
+.custom-toggler .navbar-toggler-icon {
+  background-image: url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 32 32' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='rgba(68, 55, 55, 1)' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 8h24M4 16h24M4 24h24'/%3E%3C/svg%3E");
+}
+
+.navbar-brand{
+  color: #443737
+}
+
+.my-yellow{
+  background: #feca57
+}
+
+.jumbotron{
+  background:transparent !important
+}
+
+.fit-image{
+  width: 100%;
+  object-fit: cover;
+  /* height: 300px;  */
+}
+
+.cart-container{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+.img-cart{
+  flex-shrink: 0;
+  min-width: 100%;
+  min-height: 100%
+}
+
+.cart-list{
+  border-radius: 15px;
+}
+
+.btn-danger{
+  color: #443737 !important;
+  background-color:
 }
