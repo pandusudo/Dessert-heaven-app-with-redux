@@ -81,3 +81,7 @@ body{
   color: #443737 !important;
   background-color:
 }
+
+.btn-outline-dark:hover{
+  color: #feca57 !important;
+}

@@ -50,6 +50,7 @@ class Cart extends Component{
       image: this.props.image
     })
     await this.props.handleRemove(this.props.id)
+    // await this.props.handleTotal(0)
   }
 
   async reduceQuantity(){

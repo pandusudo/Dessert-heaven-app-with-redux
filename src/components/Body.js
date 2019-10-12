@@ -3,19 +3,28 @@ import axios from 'axios'
 import '../assets/css/bootstrap.min.css'
 import '../assets/css/fontawesome.min.css'
 import '../App.css'
+import { Link } from 'react-router-dom'
 import Product from './Product'
 import Cart from './Cart'
+import { connect } from 'react-redux'
+import { categories } from '../Redux/Actions/Categories'
 
 class Body extends Component {
   constructor(props) {
     super()
     this.state = {
-      pages: 0,
       data: [],
       categories: [],
       cart: [],
+      currentPage: 0,
+      pages: 0,
+      allData: 0,
       total: 0,
+      amount: 0,
     }
+    this.handleCheckout = this.handleCheckout.bind(this)
+    this.nextPage = this.nextPage.bind(this)
+    this.previousPage = this.previousPage.bind(this)
     this.removeCart = this.removeCart.bind(this)
     this.getAll = this.getAll.bind(this)
     this.getCategories = this.getCategories.bind(this)
@@ -35,7 +44,6 @@ class Body extends Component {
   }
 
   calculateTotal(price) {
-    // console.log(this.state.cart)
     this.setState({
       total: this.state.total + price
     })
@@ -46,15 +54,27 @@ class Body extends Component {
     this.sortBy(val)
   }
 
+  async previousPage(){
+    if (this.state.currentPage > 0) {
+      this.state.currentPage -= 6
+    }
+    await this.getAll()
+  }
+
+  nextPage(){
+    this.state.currentPage += 6
+    this.getAll()
+  }
+
   handleSubmit(e){
-    console.log(e)
-    // alert(e.target)
     e.preventDefault()
     const data = new FormData(e.target)
 
-    fetch('http://localhost:3333/api/products', {
-      method: 'POST',
-      body: data,
+    axios({
+      method: 'post',
+      url: 'http://localhost:3333/api/products',
+      data: data,
+      config: { headers: {'Content-Type': 'multipart/form-data', Authorization: localStorage.getItem('keyToken') }}
     })
     window.location.href = "http://localhost:3000/home";
   }
@@ -63,7 +83,11 @@ class Body extends Component {
     if (val === '') {
       this.getAll()
     }else {
-      axios.get('http://localhost:3333/api/products?sortBy='+val)
+      axios.get('http://localhost:3333/api/products?page='+this.state.currentPage+'&limit=6&sortBy='+val,{
+        headers: {
+          Authorization: localStorage.getItem('keyToken')
+        }
+      })
       .then(result => {
         this.setState({data: result.data.data})
       })
@@ -74,6 +98,7 @@ class Body extends Component {
   }
 
   handleCart(result) {
+    this.state.amount += 1
     this.setState( state => {
       const cart = state.cart
       let inCart = false
@@ -90,18 +115,8 @@ class Body extends Component {
     })
   }
 
-  pagination = () => {
-    let pagination = []
-
-    // Outer loop to create parent
-    for (let i = 0; i < this.state.pages; i++) {
-      pagination.push(<li className="page-item"><a className="page-link" onClick={this.getAll(i)}>{i+1}</a></li>)
-    }
-    return pagination
-  }
-
   reduceCart(result) {
-    // console.log(this.state.cart)
+    this.state.amount -= 1
     this.setState(state => {
       const cart = state.cart
       cart.forEach(item => {
@@ -113,16 +128,31 @@ class Body extends Component {
     })
   }
 
+  handleCheckout(){
+    this.state.cart.map((item, index) => {
+      axios.post('http://localhost:3333/api/products/history', {
+        product: item.name,
+        price: item.price*item.qty,
+        amount: item.qty
+      } , {
+        headers: {
+          Authorization: localStorage.getItem('keyToken')
+        }
+      })
+      .then(res => {
+        console.log(res);
+        console.log(res.data);
+      })
+    })
+  }
+
   async removeCart(id){
-    console.log(this.state.cart)
     let state = [...this.state.cart]
     let index = state.map(el => el.id).indexOf(id)
+    this.state.amount -= this.state.cart[index].qty
+    this.state.total -= (this.state.cart[index].qty * this.state.cart[index].price)
     if (index !== -1) state.splice(index,1)
     this.setState({cart: state})
-    // if (this.state.cart.qty < 1) {
-    //   await this.state.cart.splice(,1)
-    // }
-    console.log(this.state.cart)
   }
 
   handleKeyPress(e){
@@ -133,7 +163,11 @@ class Body extends Component {
   }
 
   search(val){
-    axios.get('http://localhost:3333/api/products?name='+val)
+    axios.get('http://localhost:3333/api/products?page='+this.state.currentPage+'&limit=6&name='+val,{
+      headers: {
+        Authorization: localStorage.getItem('keyToken')
+      }
+    })
     .then(result => {
       this.setState({data: result.data.data})
     })
@@ -142,31 +176,55 @@ class Body extends Component {
     })
   }
 
-  getAll(page = 0){
-    const limit = 999
-    let pageCount = Math.ceil(this.state.data.count/limit)
-    this.setState({pages: pageCount})
-    axios.get('http://localhost:3333/api/products?page='+page+'&limit='+limit)
+  async getAll(){
+    await axios.get('http://localhost:3333/api/products',{
+      headers: {
+        Authorization: localStorage.getItem('keyToken')
+      }
+    })
+    .then(result => {
+      this.setState({allData: result.data.count})
+    })
+    .catch(err => {
+      console.log(err)
+    })
+
+    await axios.get('http://localhost:3333/api/products?page='+this.state.currentPage+'&limit=6',{
+      headers: {
+        Authorization: localStorage.getItem('keyToken')
+      }
+    })
     .then(result => {
       this.setState({data: result.data.data})
+      // console.log(this.state.data)
     })
     .catch(err => {
       console.log(err)
     })
   }
 
-  getCategories(){
-    axios.get('http://localhost:3333/api/categories')
-    .then(result => {
-      this.setState({categories: result.data.data})
-      // console.log(result.data.data)
-    })
-    .catch(err => {
-      console.log(err)
-    })
+  async getCategories(){
+    await this.props.dispatch(categories())
+    console.log(this.props.data.categories)
+    this.setState({categories: this.props.data.categories})
+    // axios.get('http://localhost:3333/api/categories',{
+    //   headers: {
+    //     Authorization: localStorage.getItem('keyToken')
+    //   }
+    // })
+    // .then(result => {
+    //   this.setState({categories: result.data.data})
+    //   // console.log(result.data.data)
+    // })
+    // .catch(err => {
+    //   console.log(err)
+    // })
+
   }
 
   render() {
+    var max = Math.ceil(this.state.allData / 6)
+    console.log(this.state.data)
     return(
       <div className="row" >
         <div className = "col-md-1 pl-0 ml-0 border border-light border-top-0 shadow" style={{height: "700px"}}>
@@ -174,6 +232,15 @@ class Body extends Component {
             <div className="col-md-12 ml-5 mt-4">
               <button data-toggle="modal" data-target="#addModal" className = "btn">
                 <span className="fas fa-plus"></span>
+              </button>
+            </div>
+          </div>
+          <div className="row">
+            <div className="col-md-12 ml-5 mt-4">
+              <button className = "btn">
+                <Link to="/history">
+                  <span className="fas fa-history"></span>
+                </Link>
               </button>
             </div>
           </div>
@@ -217,13 +284,27 @@ class Body extends Component {
           }
         </div>
         <div className="row">
-          <nav aria-label="Page navigation example">
-            <ul className="pagination">
-          {
-            this.pagination
-          }
-            </ul>
-          </nav>
+          <div className="col-md-5">
+            <div className="row">
+              <div className="col-md-2">
+                <span className="input-group-btn">
+                  <button type="button" className="btn btn-default btn-number" disabled={Math.ceil((this.state.currentPage / 6)+1) < 2} onClick={this.previousPage} data-type="minus" data-field="quant[1]">
+                    <span className="fas fa-minus" />
+                  </button>
+                </span>
+              </div>
+              <div className="col-md-8">
+                <input type="text" name="quant[1]" value={Math.ceil((this.state.currentPage / 6)+1)} className="form-control input-number" defaultValue={1} min={1} />
+              </div>
+              <div className="col-md-2">
+                <span className="input-group-btn">
+                  <button type="button" className="btn btn-default btn-number" disabled={Math.ceil((this.state.currentPage / 6)+1) == max} data-type="plus" data-field="quant[1]" onClick={this.nextPage}>
+                    <span className="fas fa-plus" />
+                  </button>
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
       <div className = "col-md-3 p-4 m-0 border border-light border-top-0 shadow">
@@ -258,6 +339,17 @@ class Body extends Component {
           <strong>
             Total Price: $ {this.state.total}
           </strong>
+          {
+            (this.state.cart.length) > 0 ? (
+              <div className="row mt-2 ml-2">
+                <button data-toggle="modal" data-target="#checkout" className = "btn btn-primary">
+                  Checkout
+                </button>
+              </div>
+            ) : (
+              <div></div>
+            )
+          }
         </div>
       </div>
 
@@ -365,10 +457,108 @@ class Body extends Component {
           </div>
         </div>
       </div>
+
+
+      <div
+        className="modal fade"
+        id="checkout"
+        tabindex={-1}
+        role="dialog"
+        aria-labelledby="exampleModalLabel"
+        aria-hidden="true">
+        <div className="modal-dialog" role="document">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h5
+                className="modal-title"
+                id="exampleModalLabel">
+                Checkout
+              </h5>
+              <button
+                type="button"
+                className="close"
+                data-dismiss="modal"
+                aria-label="Close">
+                <span aria-hidden="true">×</span>
+              </button>
+            </div>
+            <form>
+              <div className="modal-body">
+                <div className="form-group">
+                  {
+                    this.state.cart.map((item, index) => {
+                      return (
+                        <div className="row">
+                          <div className="col-md-6">
+                            {item.name}
+                          </div>
+                          <div className="col-md-3">
+                            $ {item.price}
+                          </div>
+                          <div className="col-md-3">
+                            {item.qty}
+                          </div>
+                        </div>
+                      )
+                    })
+                  }
+                  <div className="row mt-1">
+                    <div className="col-md-6">
+                      <strong>PPN 10%</strong>
+                    </div>
+                    <div className="col-md-3">
+                      <strong>$ {this.state.total * 0.1}</strong>
+                    </div>
+                    <div className="col-md-3">
+                      <strong>{this.state.amount}</strong>
+                    </div>
+                  </div>
+                  <div className="row mt-2">
+                    <div className="col-md-6">
+                      <strong>Products</strong>
+                    </div>
+                    <div className="col-md-3">
+                      <strong>Total Price</strong>
+                    </div>
+                    <div className="col-md-3">
+                      <strong>Amount</strong>
+                    </div>
+                  </div>
+                  <div className="row mt-1">
+                    <div className="col-md-6">
+                      <strong></strong>
+                    </div>
+                    <div className="col-md-3">
+                      <strong>$ {this.state.total + (this.state.total * 0.1)}</strong>
+                    </div>
+                    <div className="col-md-3">
+                      <strong>{this.state.amount}</strong>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-warning"
+                  data-dismiss="modal">Close</button>
+                <button type="button" onClick={this.handleCheckout} className="btn btn-primary">
+                  Submit
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
 }
 
+const mapStateToProps = state => {
+  return {
+    data: state.categories
+  }
+}
 
-export default Body
+export default connect (mapStateToProps)(Body)

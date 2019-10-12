@@ -1,18 +1,18 @@
 import React, { Component } from 'react'
 import { BrowserRouter as Router, Route } from 'react-router-dom'
 
-import Body from './Body'
+import Graph from './Graph'
 import Navbars from './Navbars'
 
-class Layout extends Component{
+class Home extends Component{
   render () {
     return (
       <>
       <Navbars />
-      <Body />
+      <Graph />
       </>
     )
   }
 }
 
-export default Layout
+export default Home

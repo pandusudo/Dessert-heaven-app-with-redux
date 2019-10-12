@@ -8,7 +8,7 @@ class Login extends Component{
   constructor(props){
     super(props)
     this.handleSubmit = this.handleSubmit.bind(this)
-    this.setSession = this.setSession.bind(this)
+    // this.setSession = this.setSession.bind(this)
   }
 
   handleSubmit(e){
@@ -16,16 +16,18 @@ class Login extends Component{
     const data = new FormData(e.target)
     console.log(e)
 
-    fetch('http://localhost:3333/api/users/login', {
-      method: 'POST',
-      body: data,
+    axios({
+      method: 'post',
+      url: 'http://localhost:3333/api/users/login',
+      data: data,
+      config: { headers: {'Content-Type': 'multipart/form-data' }}
     })
     .then(res => {
-      if (res.status === 200) {
-        window.location.href = "http://localhost:3000/home"
-      } else if (res.status === 400){
-        alert("username or password is wrong")
-      }
+      localStorage.setItem('keyToken', `Bearer ${res.data.token}`)
+      window.location.href = "http://localhost:3000/home"
+    })
+    .catch(err => {
+      alert('username or password incorrect')
     })
   }
 
@@ -47,9 +49,9 @@ class Login extends Component{
     })
   }
 
-  setSession(){
-    console.log()
-  }
+  // setSession(){
+  //   console.log()
+  // }
 
 
 

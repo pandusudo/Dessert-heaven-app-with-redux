@@ -8,27 +8,99 @@ class Product extends Component {
   constructor(props){
     super(props)
     this.state = {
-      categories: this.props.allCategory,
-      id: "",
-      name: "",
-      price: 0,
-      id_category: "",
+      categories: [],
+      id: this.props.id,
+      name: this.props.name,
+      price: this.props.price,
+      description: this.props.description,
+      id_category: this.props.category,
       image: "",
-      qty: 0
+      qty: this.props.quantity,
+      qtyInCart: 0
     }
+    this.handleChangeQuantity = this.handleChangeQuantity.bind(this)
+    this.handleUpdate = this.handleUpdate.bind(this)
+    this.handleChangeDesc = this.handleChangeDesc.bind(this)
+    this.handleChangePrice = this.handleChangePrice.bind(this)
+    this.handleChangeName = this.handleChangeName.bind(this)
     this.checkSelected = this.checkSelected.bind(this)
     this.addToCart = this.addToCart.bind(this)
     this.handleDelete = this.handleDelete.bind(this)
-    console.log(this.props.allCategory)
+    this.getCategories = this.getCategories.bind(this)
+    // console.log(this.props.allCategory)
+  }
+
+  componentDidMount(){
+    this.getCategories()
+  }
+
+  getCategories(){
+    axios.get('http://localhost:3333/api/categories',{
+      headers: {
+        Authorization: localStorage.getItem('keyToken')
+      }
+    })
+    .then(result => {
+      this.setState({categories: result.data.data})
+      // console.log(result.data.data)
+    })
+    .catch(err => {
+      console.log(err)
+    })
+  }
+
+  handleChangeName(e){
+    let val = e.target.value
+    this.setState({
+      name: val
+    })
+  }
+
+  handleChangeQuantity(e){
+    let val = e.target.value
+    this.setState({
+      qty: val
+    })
+  }
+
+  handleChangeDesc(e){
+    let val = e.target.value
+    this.setState({
+      description: val
+    })
+  }
+
+  handleChangePrice(e){
+    let val = e.target.value
+    this.setState({
+      price: val
+    })
+  }
+
+  handleUpdate(e){
+    e.preventDefault()
+    const data = new FormData(e.target)
+
+    let url = `http://localhost:3333/api/products/${this.props.id}`
+
+    axios({
+      method: 'put',
+      url: url,
+      data: data,
+      config: { headers: {'Content-Type': 'multipart/form-data', 'Authorization': localStorage.getItem('keyToken') }}
+    })
+
+    window.location.href = "http://localhost:3000/home";
   }
 
   async addToCart(){
-    if(this.state.qty > 0){
-      this.state.qty +=1
+    console.log(this.state.name)
+    if(this.state.qtyInCart > 0){
+      this.state.qtyInCart +=1
     } else {
       await this.setState({
         id: this.props.id,
-        qty: 1,
+        qtyInCart: 1,
         name: this.props.name,
         price: this.props.price,
         image: this.props.image,
@@ -59,6 +131,7 @@ class Product extends Component {
   }
 
   render(){
+    console.log(this.state)
     return(
       <div className = "col-sm-4">
         <div className="card mr-5" style={{width: '18rem'}}>
@@ -174,7 +247,8 @@ class Product extends Component {
                       className="form-control"
                       id="name"
                       name="name"
-                      value={this.props.name} />
+                      onChange = {this.handleChangeName}
+                      value={this.state.name} />
                   </div>
                   <div className="form-group">
                     <label
@@ -185,7 +259,8 @@ class Product extends Component {
                       className="form-control"
                       id="price"
                       name="price"
-                      value={this.props.price} />
+                      onChange = {this.handleChangePrice}
+                      value={this.state.price} />
                   </div>
                   <div className="form-group">
                     <label
@@ -196,13 +271,15 @@ class Product extends Component {
                       className="form-control"
                       id="quantity"
                       name="count"
-                      value={this.props.quantity} />
+                      onChange = {this.handleChangeQuantity}
+                      value={this.state.qty} />
                   </div>
                   <div>
                     <label
                       htmlFor="id_category"
                       className="col-form-label">category:</label>
                     <select id="category" name="id_category" className="form-control">
+                      <option value="">--SELECT--</option>
                       {
                         this.state.categories.map((item, index) => {
                           return (
@@ -210,7 +287,6 @@ class Product extends Component {
                           )
                         })
                       }
-                      <option value="">--SELECT--</option>
                     </select>
                   </div>
                   <div className="form-group">
@@ -231,7 +307,8 @@ class Product extends Component {
                       className="form-control"
                       id="description"
                       name="description"
-                      value={this.props.description} />
+                      onChange = {this.handleChangeDesc}
+                      value={this.state.description} />
                   </div>
                 </div>
                 <div className="modal-footer">

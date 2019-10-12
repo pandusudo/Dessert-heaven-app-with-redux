@@ -3,40 +3,29 @@ import '../assets/css/bootstrap.min.css'
 import '../assets/css/fontawesome.min.css'
 
 class Navbars extends Component {
+  constructor(props){
+    super(props)
+    this.state = {}
+    this.handleLogOut = this.handleLogOut.bind(this)
+  }
+
+  handleLogOut(){
+    localStorage.removeItem("keyToken")
+    window.location.href = "http://localhost:3000"
+  }
+
   render() {
     return (
-      <div className = "row">
-        <div className = "col-md-1 p-0 mr-0">
-          <nav className="navbar navbar-custom">
+      <div>
+        <nav className="navbar navbar-custom">
+          <a className="navbar-brand ml-4">Dessert Heaven</a>
+          <form className="form-inline">
             <button
-              className="navbar-toggler navbar-toggler-right custom-toggler m-auto"
+              className="btn btn-outline-dark my-2 my-sm-0"
               type="button"
-              data-toggle="collapse"
-              data-target="#navbarToggleExternalContent"
-              aria-controls="navbarToggleExternalContent"
-              aria-expanded="false"
-              aria-label="Toggle navigation">
-              <span className="navbar-toggler-icon" />
-            </button>
-          </nav>
-        </div>
-        <div className = "col-md-8 p-0 mr-0">
-          <nav className="navbar navbar-custom">
-            <p className = "navbar-brand m-auto">
-              Dessert Heaven
-            </p>
-            <button type="button" className="btn ">
-              <i className="fas fa-search"></i>
-            </button>
-          </nav>
-        </div>
-        <div className = "col-md-3 p-0 ml-0">
-          <nav className="navbar navbar-custom">
-            <i className = "navbar-brand">
-              Cart
-            </i>
-          </nav>
-        </div>
+              onClick={this.handleLogOut}>Log out</button>
+          </form>
+        </nav>
       </div>
     )
   }
